@@ -5,7 +5,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.minecraft.server.v1_8_R3.*;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
 import io.netty.channel.*;
@@ -14,14 +13,11 @@ import org.bukkit.*;
 
 public class BucketFixPlugin extends JavaPlugin implements Listener {
 
-    private Plugin PLUGIN;
-
     private final Map<Player, Channel> CHANNELS = new ConcurrentHashMap<>();
     private final String HANDLER_NAME = "bucketfix-handler";
 
     @Override
     public void onEnable() {
-        this.PLUGIN = this;
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getOnlinePlayers().forEach(this::injectPlayer);
     }
