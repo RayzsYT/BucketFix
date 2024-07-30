@@ -64,14 +64,13 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
     private void uninjectPlayer(Player player) {
         if(!CHANNELS.containsKey(player)) return;
         final Channel channel = CHANNELS.get(player);
+        CHANNELS.remove(player);
 
         channel.eventLoop().submit(() -> {
             final ChannelPipeline pipeline = channel.pipeline();
             if (pipeline.names().contains(HANDLER_NAME))
                 pipeline.remove(HANDLER_NAME);
         });
-
-        CHANNELS.remove(player);
     }
 
     private class CustomChannelHandler extends ChannelDuplexHandler {
