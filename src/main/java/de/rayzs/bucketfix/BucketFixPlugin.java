@@ -1,10 +1,10 @@
 package de.rayzs.bucketfix;
 
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
-import org.bukkit.event.player.PlayerJoinEvent;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.minecraft.server.v1_8_R3.*;
+import org.bukkit.event.player.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
 import io.netty.channel.*;
@@ -38,17 +38,16 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
             }, 20);
     }
 
-    private void uninjectPlayer(Player player) {
-        if(!CHANNELS.containsKey(player)) return;
-        final Channel channel = CHANNELS.get(player);
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        final Player player = event.getPlayer();
 
-        channel.eventLoop().submit(() -> {
-            final ChannelPipeline pipeline = channel.pipeline();
-            if (pipeline.names().contains(HANDLER_NAME))
-                pipeline.remove(HANDLER_NAME);
-        });
+        uninjectPlayer(player);
+    }
 
-        CHANNELS.remove(player);
+    private void changeMode(Channel channel, boolean interact) {
+        PacketPlayOutGameStateChange packet = new PacketPlayOutGameStateChange(3, interact ? 0 : 2);
+        channel.writeAndFlush(packet);
     }
 
     private boolean injectPlayer(Player player) {
@@ -62,9 +61,17 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
         return true;
     }
 
-    private void changeMode(Channel channel, boolean interact) {
-        PacketPlayOutGameStateChange packet = new PacketPlayOutGameStateChange(3, interact ? 0 : 2);
-        channel.writeAndFlush(packet);
+    private void uninjectPlayer(Player player) {
+        if(!CHANNELS.containsKey(player)) return;
+        final Channel channel = CHANNELS.get(player);
+
+        channel.eventLoop().submit(() -> {
+            final ChannelPipeline pipeline = channel.pipeline();
+            if (pipeline.names().contains(HANDLER_NAME))
+                pipeline.remove(HANDLER_NAME);
+        });
+
+        CHANNELS.remove(player);
     }
 
     private class CustomChannelHandler extends ChannelDuplexHandler {
