@@ -2,6 +2,8 @@ package de.rayzs.bucketfix;
 
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.event.player.*;
@@ -13,11 +15,15 @@ import org.bukkit.*;
 
 public class BucketFixPlugin extends JavaPlugin implements Listener {
 
+    private static Plugin PLUGIN;
+
     private final Map<Player, Channel> CHANNELS = new ConcurrentHashMap<>();
     private final String HANDLER_NAME = "bucketfix-handler";
 
     @Override
     public void onEnable() {
+        PLUGIN = this;
+
         getServer().getPluginManager().registerEvents(this, this);
         Bukkit.getOnlinePlayers().forEach(this::injectPlayer);
     }
@@ -91,7 +97,7 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
                 if (itemName.endsWith("Bucket")) {
                     if(player.getGameMode() == GameMode.SURVIVAL) {
                         changeMode(channel, false);
-                        changeMode(channel, true);
+                        Bukkit.getScheduler().runTaskLaterAsynchronously(PLUGIN, () -> changeMode(channel, true), 1);
                     }
                 }
             }
