@@ -1,5 +1,9 @@
 package de.rayzs.bucketfix;
 
+import org.bukkit.GameMode;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -36,8 +40,9 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         final Player player = event.getPlayer();
 
-        if(!injectPlayer(player))
+        if(!injectPlayer(player) && player.isOnline())
             Bukkit.getScheduler().runTaskLater(this, () -> {
+                if(!player.isOnline()) return;
                 if(!injectPlayer(player)) player.kickPlayer("[BucketFix] Failed to get channel!");
             }, 20);
     }
@@ -56,6 +61,8 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
     }
 
     private boolean injectPlayer(Player player) {
+        if(!player.isOnline()) return false;
+
         final Channel channel = ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel;
         if(channel == null) return false;
 
@@ -64,26 +71,9 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
         return true;
     }
 
-    private void updateCube(Player player, BlockPosition blockPosition, int radius) {
-        for(int x = -radius; x < radius; x++)
-            for(int y = -radius; y < radius; y++)
-                for(int z = -radius; z < radius; z++)
-                    sendFakeBlock(player, player.getWorld(), blockPosition.getX() + x, blockPosition.getY() + y, blockPosition.getZ() + z);
-    }
-
-    private void sendFakeBlock(Player player, org.bukkit.World world, int x, int y, int z) {
-        try {
-            CraftPlayer craftPlayer = (CraftPlayer) player;
-            EntityPlayer entityPlayer = craftPlayer.getHandle();
-
-            CraftWorld craftWorld =  (CraftWorld) world;
-            BlockPosition blockPosition = new BlockPosition(x, y, z);
-            PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(craftWorld.getHandle(), blockPosition);
-
-            entityPlayer.playerConnection.sendPacket(packet);
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
+    private void changeMode(Channel channel, boolean interact) {
+        PacketPlayOutGameStateChange packet = new PacketPlayOutGameStateChange(3, interact ? 0 : 2);
+        channel.writeAndFlush(packet);
     }
 
     private class CustomChannelHandler extends ChannelDuplexHandler {
@@ -97,12 +87,15 @@ public class BucketFixPlugin extends JavaPlugin implements Listener {
         @Override
         public void channelRead(ChannelHandlerContext channelHandlerContext, Object packetObj) throws Exception {
             if (packetObj instanceof PacketPlayInBlockPlace) {
-                PacketPlayInBlockPlace packet = (PacketPlayInBlockPlace) packetObj;
-                String itemName = packet.getItemStack() == null ? "AIR" : packet.getItemStack().getName();
+                final PacketPlayInBlockPlace packet = (PacketPlayInBlockPlace) packetObj;
+                final String itemName = packet.getItemStack() == null ? "AIR" : packet.getItemStack().getName();
+                final Channel channel = channelHandlerContext.channel();
 
-                if (itemName.endsWith(" Bucket")) {
-                    BlockPosition blockPosition = packet.a();
-                    Bukkit.getScheduler().scheduleAsyncDelayedTask(PLUGIN, () -> updateCube(player, blockPosition, 5), 1);
+                if (itemName.endsWith("Bucket")) {
+                    if(player.getGameMode() == GameMode.SURVIVAL) {
+                        changeMode(channel, false);
+                        changeMode(channel, true);
+                    }
                 }
             }
 
