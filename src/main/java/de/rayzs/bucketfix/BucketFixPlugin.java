@@ -1,11 +1,6 @@
 package de.rayzs.bucketfix;
 
-import org.bukkit.GameMode;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.event.player.PlayerJoinEvent;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -14,8 +9,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
 import io.netty.channel.*;
-import org.bukkit.Bukkit;
 import java.util.Map;
+import org.bukkit.*;
 
 public class BucketFixPlugin extends JavaPlugin implements Listener {
 
